@@ -1,9 +1,8 @@
 from django.shortcuts import render, redirect, HttpResponse
-from django.utils import timezone
 from django.contrib import messages
-import bcrypt
-from datetime import date
+from django.contrib.auth.decorators import login_required
 from .models import *
+import bcrypt
 
 def index(request):
     return render(request, 'main/index.html')
@@ -33,6 +32,7 @@ def login(request):
         print("This is the user's id:", request.session['user'])
         return redirect('dashboard')
 
+@login_required(login_url='index')
 def dashboard(request):
     user = User.objects.get(id=request.session['user'])
     context = {
@@ -42,14 +42,17 @@ def dashboard(request):
     }
     return render(request, 'main/dashboard.html', context)
 
+@login_required(login_url='index')
 def view(request, id):
     # display the page with job description and the adding information
     job = Job.objects.get(id=id)
     return render(request, 'main/view.html', {'job':job})
 
+@login_required(login_url='index')
 def make_job(request):
     return render(request, 'main/make_job.html')
 
+@login_required(login_url='index')
 def submit_the_job(request):
     errors = Job.objects.job_validator(request.POST)
     if len(errors):
@@ -61,6 +64,7 @@ def submit_the_job(request):
         new_job = Job.objects.create(title=request.POST['title'], description=request.POST['desc'], location=request.POST['location'], creator=user)
         return redirect('dashboard')
 
+@login_required(login_url='index')
 def add_job(request, id):
     user = User.objects.get(id=request.session['user'])
     job = Job.objects.get(id=id)
@@ -68,11 +72,12 @@ def add_job(request, id):
     job.save()
     return redirect('dashboard')
 
+@login_required(login_url='index')
 def edit_job(request, id):
     job = Job.objects.get(id=id)
-    # direct to the page with prepopulated job info
     return render(request, 'main/edit_job.html', {'job':job})
 
+@login_required(login_url='index')
 def edit(request, id):
     errors = Job.objects.job_validator(request.POST)
     if len(errors):
@@ -82,13 +87,14 @@ def edit(request, id):
     else:
         user = User.objects.get(id=request.session['user'])
         job = Job.objects.get(id=id)
-        job.title=request.POST['title']
-        job.description=request.POST['desc']
-        job.location=request.POST['location']
-        job.creator=user
+        job.title = request.POST['title']
+        job.description = request.POST['desc']
+        job.location = request.POST['location']
+        job.creator = user
         job.save()
         return redirect('dashboard')
 
+@login_required(login_url='index')
 def cancel(request, id):
     job = Job.objects.get(id=id)
     job.delete()
@@ -97,7 +103,6 @@ def cancel(request, id):
 def done(request, id):
     job = Job.objects.get(id=id)
     job.delete()
-    # Done link on the user's My Jobs list deletes the job from the database
     return redirect('dashboard')
 
 def logout(request):
